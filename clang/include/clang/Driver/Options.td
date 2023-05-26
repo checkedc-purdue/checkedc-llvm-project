@@ -2535,7 +2535,8 @@ defm stack_size_section : BoolFOption<"stack-size-section",
   CodeGenOpts<"StackSizeSection">, DefaultFalse,
   PosFlag<SetTrue, [CC1Option], "Emit section containing metadata on function stack sizes">,
   NegFlag<SetFalse>>;
-
+def BinBenchCollector : Flag<["-"], "BinBenchCollector">, HelpText<"Enable BinBenchCollector">;
+def no_BinBenchCollector : Flag<["-"], "no-BinBenchCollector">, HelpText<"Disable BinBenchCollector">;
 defm unique_basic_block_section_names : BoolFOption<"unique-basic-block-section-names",
   CodeGenOpts<"UniqueBasicBlockSectionNames">, DefaultFalse,
   PosFlag<SetTrue, [CC1Option], "Use unique names for basic block sections (ELF Only)">,

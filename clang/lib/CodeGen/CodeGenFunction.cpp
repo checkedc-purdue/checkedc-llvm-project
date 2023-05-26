@@ -35,6 +35,7 @@
 #include "clang/Frontend/FrontendDiagnostic.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/Frontend/OpenMP/OMPIRBuilder.h"
+#include "llvm/IR/BingeIRMetadata.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/FPEnv.h"
@@ -744,6 +745,11 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
       if (mask & SanitizerKind::KernelHWAddress)
         SanOpts.set(SanitizerKind::HWAddress, false);
     }
+  }
+
+  llvm::MDNode *Node = llvm::BingeIRMetadata::GenBingeMd(CurFn);
+  if (Node) {
+    CurFn->setMetadata("BingeIRSrcInfo", Node);
   }
 
   // Apply sanitizer attributes to the function.
