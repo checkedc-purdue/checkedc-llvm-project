@@ -46,6 +46,7 @@
 #include "llvm/Support/YAMLTraits.h"
 #include "llvm/Transforms/IPO/Internalize.h"
 
+#include <clang/AST/ConditionStmtTypeCollector.h>
 #include <memory>
 using namespace clang;
 using namespace llvm;

@@ -1,14 +1,19 @@
 #include "clang/AST/ConditionStmtTypeCollector.h"
-#include "clang/Basic/SourceManager.h" // Include this line at the top
+#include "clang/Basic/SourceManager.h"
 
 using namespace clang;
 
-bool ConditionStmtTypeCollector::TraverseFunctionDecl(FunctionDecl *FD) {
+bool ConditionStmtTypeCollector::VisitFunctionDecl(FunctionDecl *FD) {
   currentFD = FD;
-  return RecursiveASTVisitor<ConditionStmtTypeCollector>::TraverseDecl(FD);
+  // Continue traversal
+  return true;
 }
 
+
 bool ConditionStmtTypeCollector::VisitStmt(Stmt *s) {
+  if (currentFD == NULL)
+    return true;
+
   std::string funcName = currentFD->getNameInfo().getName().getAsString();
 
   // Obtain filename (module name)
@@ -29,7 +34,7 @@ bool ConditionStmtTypeCollector::VisitStmt(Stmt *s) {
   }
 
   if (!stmtType.empty()) {
-    addNodeInfo(conditionCollectorKey, s, stmtType);
+    Collector.addNodeInfo(conditionCollectorKey, s, stmtType);
   }
 
   return true;

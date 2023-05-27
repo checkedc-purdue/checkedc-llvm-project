@@ -47,6 +47,7 @@
 #include <cstdio>
 
 #ifdef CLANG_HAVE_RLIMITS
+#include <clang/AST/ConditionStmtTypeCollector.h>
 #include <sys/resource.h>
 #endif
 
@@ -237,6 +238,8 @@ int cc1_main(ArrayRef<const char *> Argv, const char *Argv0, void *MainAddr) {
   // Execute the frontend actions.
   {
     llvm::TimeTraceScope TimeScope("ExecuteCompiler");
+    auto myAction = std::make_unique<ConditionStmtTypeFEAction>();
+    Success = Clang->ExecuteAction(*myAction);
     Success = ExecuteCompilerInvocation(Clang.get());
   }
 
