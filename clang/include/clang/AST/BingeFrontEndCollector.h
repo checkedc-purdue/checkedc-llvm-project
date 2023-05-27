@@ -32,6 +32,7 @@ public:
   static std::unordered_map<const Stmt*, StmtInfo> StmtInfoMap; // for constant time lookup
   static std::unordered_map<llvm::Value*, StmtInfo> valueToStmtInfoMap;
   const std::unordered_map<llvm::Value *, StmtInfo> &getValueToStmtInfoMap();
+  static bool areStructurallyEqual(const Stmt *S1, const Stmt *S2);
 };
 
 }  // namespace clang

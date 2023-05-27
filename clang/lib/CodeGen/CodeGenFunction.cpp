@@ -46,6 +46,7 @@
 #include "llvm/Support/CRC.h"
 #include "llvm/Transforms/Scalar/LowerExpectIntrinsic.h"
 #include "llvm/Transforms/Utils/PromoteMemToReg.h"
+#include <clang/AST/BingeFrontEndCollector.h>
 using namespace clang;
 using namespace CodeGen;
 
@@ -1809,6 +1810,10 @@ void CodeGenFunction::EmitBranchOnBoolExpr(const Expr *Cond,
   {
     ApplyDebugLocation DL(*this, Cond);
     CondV = EvaluateExprAsBool(Cond);
+  }
+  //capture your shit here -->
+  if (BingeFrontEndCollector::isStmtCollectedAsBingeSrcInfo(Cond)) {
+    BingeFrontEndCollector::addValueStmtInfo(CondV, Cond);
   }
   Builder.CreateCondBr(CondV, TrueBlock, FalseBlock, Weights, Unpredictable);
 }

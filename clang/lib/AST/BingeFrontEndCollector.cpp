@@ -32,5 +32,34 @@ void BingeFrontEndCollector::addValueStmtInfo(llvm::Value* val, const Stmt* stmt
 }
 
 bool BingeFrontEndCollector::isStmtCollectedAsBingeSrcInfo(const Stmt* S) {
-    return StmtInfoMap.find(S) != StmtInfoMap.end();
+    for (auto &kv : StmtInfoMap) {
+      if (areStructurallyEqual(S, kv.first)) {
+        return true;
+      }
+    }
+    return false;
 }
+
+bool BingeFrontEndCollector::areStructurallyEqual(const Stmt* S1, const Stmt* S2) {
+    // Check if both statements are null, or one is null
+    if (!S1 || !S2) {
+      return S1 == S2;
+    }
+
+    // Check if both statements have same class (e.g., IfStmt, WhileStmt etc.)
+    if (S1->getStmtClass() != S2->getStmtClass()) {
+      return false;
+    }
+
+    // Check children statements
+    Stmt::const_child_iterator it1 = S1->child_begin(), it2 = S2->child_begin();
+    for ( ; it1 != S1->child_end() && it2 != S2->child_end(); ++it1, ++it2) {
+      if (!areStructurallyEqual(*it1, *it2)) {
+        return false;
+      }
+    }
+
+    // Check if both statements have the same number of children
+    return it1 == S1->child_end() && it2 == S2->child_end();
+}
+

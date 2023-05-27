@@ -21,20 +21,24 @@ bool ConditionStmtTypeCollector::VisitStmt(Stmt *s) {
   std::string fileName = SM.getFilename(currentFD->getBeginLoc()).str();
 
   std::string conditionCollectorKey = "ConditionCollector@" + fileName + "@" + funcName;
-
+  Stmt* StatementOfInterest = NULL;
   std::string stmtType;
   if (isa<IfStmt>(s)) {
     stmtType = "If";
+    StatementOfInterest = dyn_cast<IfStmt>(s)->getCond();
   } else if (isa<SwitchStmt>(s)) {
     stmtType = "Switch";
+    StatementOfInterest = dyn_cast<SwitchStmt>(s)->getCond();
   } else if (isa<GotoStmt>(s)) {
     stmtType = "Goto";
+    StatementOfInterest = dyn_cast<GotoStmt>(s);
   } else if (isa<ConditionalOperator>(s)) {
     stmtType = "?:";
+    StatementOfInterest = dyn_cast<ConditionalOperator>(s)->getCond();
   }
 
   if (!stmtType.empty()) {
-    Collector.addNodeInfo(conditionCollectorKey, s, stmtType);
+    Collector.addNodeInfo(conditionCollectorKey, StatementOfInterest, stmtType);
   }
 
   return true;

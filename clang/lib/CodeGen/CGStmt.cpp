@@ -29,6 +29,7 @@
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/MDBuilder.h"
 #include "llvm/Support/SaveAndRestore.h"
+#include <clang/AST/BingeFrontEndCollector.h>
 
 using namespace clang;
 using namespace CodeGen;
@@ -650,7 +651,10 @@ void CodeGenFunction::EmitGotoStmt(const GotoStmt &S) {
   if (HaveInsertPoint())
     EmitStopPoint(&S);
 
-  EmitBranchThroughCleanup(getJumpDestForLabel(S.getLabel()));
+  auto RetVal = BingeEmitBranchThroughCleanup(getJumpDestForLabel(S.getLabel()));
+  if (RetVal && BingeFrontEndCollector::isStmtCollectedAsBingeSrcInfo(&S)) {
+    BingeFrontEndCollector::addValueStmtInfo(RetVal, &S);
+  }
 }
 
 
@@ -1822,7 +1826,9 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
   if (S.getConditionVariable())
     EmitDecl(*S.getConditionVariable());
   llvm::Value *CondV = EmitScalarExpr(S.getCond());
-
+  if (BingeFrontEndCollector::isStmtCollectedAsBingeSrcInfo(S.getCond())) {
+    BingeFrontEndCollector::addValueStmtInfo(CondV, S.getCond());
+  }
   // Create basic block to hold stuff that comes after switch
   // statement. We also need to create a default block now so that
   // explicit case ranges tests can have a place to jump to on
