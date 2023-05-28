@@ -31,6 +31,8 @@ MDNode* BingeIRMetadata::GenBingeMd(Function *F, std::string fileName) {
         debugInfo << "Function: " << funcName
                   << ", FileName: " << fileName
                   << ", InstructionType: " << InstructionType
+                  << ", BasicBlock: " << BB.getName().str()
+                  << ", Operands: " << I.getNumOperands()
                   << ", InstructionID: ";
 
         // Create a std::string for raw_string_ostream
@@ -45,9 +47,9 @@ MDNode* BingeIRMetadata::GenBingeMd(Function *F, std::string fileName) {
         // At this point, the instruction has been printed to 'instrString'
         debugInfo << rso.str();
 
-        unsigned BingeIRSrcInfo = F->getContext().getMDKindID("BingeIRSrcInfo");
+        unsigned MyKindID = F->getContext().getMDKindID("BingeIRSrcInfo");
         MDString *MyData = MDString::get(F->getContext(), debugInfo.str());
-        F->setMetadata(BingeIRSrcInfo, MDNode::get(F->getContext(), MyData));
+        F->setMetadata(MyKindID, MDNode::get(F->getContext(), MyData));
       }
     }
   }

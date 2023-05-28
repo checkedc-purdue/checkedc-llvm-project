@@ -411,9 +411,9 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
   std::string const fileName = SM.getFilename(CurFuncDecl->getBeginLoc()).str();
 
   llvm::MDNode *Node = llvm::BingeIRMetadata::GenBingeMd(CurFn, fileName);
-  if (Node) {
-    CurFn->setMetadata("BingeIRSrcInfo", Node);
-  }
+//  if (Node) {
+//    CurFn->setMetadata("BingeIRSrcInfo", Node);
+//  }
   EmitFunctionEpilog(*CurFnInfo, EmitRetDbgLoc, EndLoc);
   EmitEndEHSpec(CurCodeDecl);
 
