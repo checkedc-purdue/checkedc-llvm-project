@@ -24,6 +24,7 @@
 #include "clang/Basic/TargetInfo.h"
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/StringExtras.h"
+#include "llvm/IR/BingeIRMetadata.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/InlineAsm.h"
 #include "llvm/IR/Intrinsics.h"
@@ -654,6 +655,10 @@ void CodeGenFunction::EmitGotoStmt(const GotoStmt &S) {
   auto RetVal = BingeEmitBranchThroughCleanup(getJumpDestForLabel(S.getLabel()));
   if (RetVal && BingeFrontEndCollector::isStmtCollectedAsBingeSrcInfo(&S)) {
     BingeFrontEndCollector::addValueStmtInfo(RetVal, &S);
+    auto &SM = CurFuncDecl->getASTContext().getSourceManager();
+    std::string const fileName = SM.getFilename(CurFuncDecl->getBeginLoc()).str();
+
+    llvm::BingeIRMetadata::AddBingeIRSrcInfo("Goto", CurFn, fileName, RetVal);
   }
 }
 
@@ -1828,6 +1833,10 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
   llvm::Value *CondV = EmitScalarExpr(S.getCond());
   if (BingeFrontEndCollector::isStmtCollectedAsBingeSrcInfo(S.getCond())) {
     BingeFrontEndCollector::addValueStmtInfo(CondV, S.getCond());
+    auto &SM = CurFuncDecl->getASTContext().getSourceManager();
+    std::string const fileName = SM.getFilename(CurFuncDecl->getBeginLoc()).str();
+
+    llvm::BingeIRMetadata::AddBingeIRSrcInfo("Switch", CurFn, fileName, CondV);
   }
   // Create basic block to hold stuff that comes after switch
   // statement. We also need to create a default block now so that

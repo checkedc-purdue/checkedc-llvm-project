@@ -31,6 +31,7 @@
 #include "clang/Basic/Builtins.h"
 #include "clang/Basic/CodeGenOptions.h"
 #include "clang/Basic/TargetInfo.h"
+#include "clang/Basic/SourceManager.h"
 #include "clang/CodeGen/CGFunctionInfo.h"
 #include "clang/Frontend/FrontendDiagnostic.h"
 #include "llvm/ADT/ArrayRef.h"
@@ -406,6 +407,13 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
   // Reset the debug location to that of the simple 'return' expression, if any
   // rather than that of the end of the function's scope '}'.
   ApplyDebugLocation AL(*this, Loc);
+  auto &SM = CurFuncDecl->getASTContext().getSourceManager();
+  std::string const fileName = SM.getFilename(CurFuncDecl->getBeginLoc()).str();
+
+  llvm::MDNode *Node = llvm::BingeIRMetadata::GenBingeMd(CurFn, fileName);
+  if (Node) {
+    CurFn->setMetadata("BingeIRSrcInfo", Node);
+  }
   EmitFunctionEpilog(*CurFnInfo, EmitRetDbgLoc, EndLoc);
   EmitEndEHSpec(CurCodeDecl);
 
@@ -746,11 +754,6 @@ void CodeGenFunction::StartFunction(GlobalDecl GD, QualType RetTy,
       if (mask & SanitizerKind::KernelHWAddress)
         SanOpts.set(SanitizerKind::HWAddress, false);
     }
-  }
-
-  llvm::MDNode *Node = llvm::BingeIRMetadata::GenBingeMd(CurFn);
-  if (Node) {
-    CurFn->setMetadata("BingeIRSrcInfo", Node);
   }
 
   // Apply sanitizer attributes to the function.
@@ -1814,6 +1817,13 @@ void CodeGenFunction::EmitBranchOnBoolExpr(const Expr *Cond,
   //capture your shit here -->
   if (BingeFrontEndCollector::isStmtCollectedAsBingeSrcInfo(Cond)) {
     BingeFrontEndCollector::addValueStmtInfo(CondV, Cond);
+    auto &SM = CurFuncDecl->getASTContext().getSourceManager();
+    clang::PresumedLoc PLoc = SM.getPresumedLoc(CurFuncDecl->getBeginLoc());
+
+    if (PLoc.isValid()) {
+      std::string fileName = PLoc.getFilename();
+      llvm::BingeIRMetadata::AddBingeIRSrcInfo("Branch", CurFn, fileName, CondV);
+    }
   }
   Builder.CreateCondBr(CondV, TrueBlock, FalseBlock, Weights, Unpredictable);
 }

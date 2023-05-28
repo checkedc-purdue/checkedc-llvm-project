@@ -296,10 +296,6 @@ public:
     Value *V = EmitLoadOfLValue(EmitCheckedLValue(E, CodeGenFunction::TCK_Load),
                                 E->getExprLoc());
 
-    // If this expression is an interesting Stmt, add it to our map
-    if (BingeFrontEndCollector::isStmtCollectedAsBingeSrcInfo(E)) {
-      BingeFrontEndCollector::addValueStmtInfo(V, E);
-    }
     EmitLValueAlignmentAssumption(E, V);
     return V;
   }
@@ -1577,10 +1573,6 @@ Value *ScalarExprEmitter::VisitExpr(Expr *E) {
   if (E->getType()->isVoidType())
     return nullptr;
   auto retVal = llvm::UndefValue::get(CGF.ConvertType(E->getType()));
-  // If this expression is an interesting Stmt, add it to our map
-  if (BingeFrontEndCollector::isStmtCollectedAsBingeSrcInfo(E)) {
-    BingeFrontEndCollector::addValueStmtInfo(retVal, E);
-  }
   return retVal;
 }
 
@@ -4801,10 +4793,6 @@ Value *CodeGenFunction::EmitScalarExpr(const Expr *E, bool IgnoreResultAssign) {
   llvm::Value* retVal = ScalarExprEmitter(*this, IgnoreResultAssign)
                             .Visit(const_cast<Expr *>(E));
 
-  // If this expression is an interesting Stmt, add it to our map
-  if (BingeFrontEndCollector::isStmtCollectedAsBingeSrcInfo(E)) {
-    BingeFrontEndCollector::addValueStmtInfo(retVal, E);
-  }
   return retVal;
 }
 

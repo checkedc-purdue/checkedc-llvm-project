@@ -19,9 +19,9 @@ public:
     std::string stmtStr;  // corresponding statement string
   };
 
-  static MDNode* GenBingeMd(Function *F);
-  static std::string decodeFileName(const std::string &key);
-  static std::string decodeFuncName(const std::string &key);
+  static MDNode* GenBingeMd(Function *F, std::string fileName);
+  static void AddBingeIRSrcInfo(const std::string &IRTypeStr, Function *CurFn,
+                                const std::string fileName, Value *V);
 };
 
 } // end namespace llvm

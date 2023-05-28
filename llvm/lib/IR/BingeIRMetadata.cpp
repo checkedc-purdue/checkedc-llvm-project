@@ -7,45 +7,8 @@ using namespace llvm;
 std::map<std::string, std::map<Value*, std::set<Value*>>> BingeIRMetadata::BingeIRInfo;
 std::map<std::string, std::map<Value*, std::string>> BingeIRMetadata::BingeIRSrcInfo;
 
-std::string BingeIRMetadata::decodeFileName(const std::string &key) {
-  std::istringstream iss(key);
-  std::string segment;
-  std::vector<std::string> seglist;
-
-  while(std::getline(iss, segment, '@')) {
-    seglist.push_back(segment);
-  }
-
-  if(seglist.size() == 3 && seglist[0] == "ConditionCollector") {
-    return seglist[1];
-  } else {
-    // Handle error
-    std::cerr << "Invalid key format\n";
-    return "";
-  }
-}
-
-std::string BingeIRMetadata::decodeFuncName(const std::string &key) {
-  std::istringstream iss(key);
-  std::string segment;
-  std::vector<std::string> seglist;
-
-  while(std::getline(iss, segment, '@')) {
-    seglist.push_back(segment);
-  }
-
-  if(seglist.size() == 3 && seglist[0] == "ConditionCollector") {
-    return seglist[2];
-  } else {
-    // Handle error
-    std::cerr << "Invalid key format\n";
-    return "";
-  }
-}
-
-MDNode* BingeIRMetadata::GenBingeMd(Function *F) {
-  std::string fileName = decodeFileName(F->getName().str());
-  std::string funcName = decodeFuncName(F->getName().str());
+MDNode* BingeIRMetadata::GenBingeMd(Function *F, std::string fileName) {
+  std::string funcName = F->getName().str();
 
   // Look up the function in the BingeIRSrcInfo map.
   auto iter = BingeIRSrcInfo.find("ConditionCollector@" + fileName + "@" + funcName);
@@ -61,17 +24,30 @@ MDNode* BingeIRMetadata::GenBingeMd(Function *F) {
     for (auto &I : BB) {  // For each instruction in the basic block
       if (valueMap.find(&I) != valueMap.end()) {
         // Get the string representing the location.
-        std::string locStr = valueMap[&I];
+        std::string InstructionType = valueMap[&I];
 
-        // Assuming locStr is in the format "filename:line:col".
-        std::istringstream iss(locStr);
-        std::string lineStr;
-        std::getline(iss, lineStr, ':');
-        unsigned line = std::stoi(lineStr);
+        // Create a meaningful debug string for this instruction
+        std::stringstream debugInfo;
+        debugInfo << "Function: " << funcName
+                  << ", FileName: " << fileName
+                  << ", InstructionType: " << InstructionType
+                  << ", InstructionID: ";
 
-        // Create a metadata string for this instruction
-        MDString *MD = MDString::get(F->getContext(), funcName + ":" + std::to_string(line));
-        I.setMetadata("dbg", MDNode::get(F->getContext(), MD));  // Set the debug info
+        // Create a std::string for raw_string_ostream
+        std::string instrString;
+
+        // Create a raw_string_ostream to capture the output of the print method
+        llvm::raw_string_ostream rso(instrString);
+
+        // Print the instruction to the raw string stream
+        I.print(rso);
+
+        // At this point, the instruction has been printed to 'instrString'
+        debugInfo << rso.str();
+
+        unsigned BingeIRSrcInfo = F->getContext().getMDKindID("BingeIRSrcInfo");
+        MDString *MyData = MDString::get(F->getContext(), debugInfo.str());
+        F->setMetadata(BingeIRSrcInfo, MDNode::get(F->getContext(), MyData));
       }
     }
   }
@@ -80,3 +56,15 @@ MDNode* BingeIRMetadata::GenBingeMd(Function *F) {
   MDString *MD = MDString::get(F->getContext(), funcName);
   return MDNode::get(F->getContext(), MD);
 }
+void BingeIRMetadata::AddBingeIRSrcInfo(const std::string &IRTypeStr, Function *CurFn, const std::string fileName, Value *V) {
+  if (!CurFn) return; // add error handling
+
+  std::string funcName = CurFn->getName().str();
+
+  // Generate the key for the BingeIRSrcInfo map
+  std::string key = "ConditionCollector@" + fileName + "@" + funcName;
+
+  // Insert the value with the given IR type string into the map
+  BingeIRSrcInfo[key][V] = IRTypeStr;
+}
+

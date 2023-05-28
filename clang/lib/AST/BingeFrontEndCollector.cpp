@@ -1,4 +1,5 @@
 #include "clang/AST/BingeFrontEndCollector.h"
+#include "llvm/IR/BingeIRMetadata.h"
 
 using namespace clang;
 std::map<std::string, std::map<std::string, std::map<clang::Stmt*, std::set<clang::Stmt*>>>> clang::BingeFrontEndCollector::BingeFrontEndInstrInfo;
