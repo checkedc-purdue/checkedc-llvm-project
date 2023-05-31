@@ -1184,6 +1184,13 @@ bool CompilerInvocation::ParseCodeGenArgs(CodeGenOptions &Opts, ArgList &Args,
     Opts.ExplicitEmulatedTLS = true;
   }
 
+  if (Args.getLastArg(OPT_fbinbench_collector))
+    Opts.BinBenchCollector = true;
+
+  if (Args.getLastArg(OPT_fno_binbench_collector)) {
+    Opts.BinBenchCollector = false;
+  }
+
   if (Arg *A = Args.getLastArg(OPT_fdenormal_fp_math_EQ)) {
     StringRef Val = A->getValue();
     Opts.FPDenormalMode = llvm::parseDenormalFPAttribute(Val);

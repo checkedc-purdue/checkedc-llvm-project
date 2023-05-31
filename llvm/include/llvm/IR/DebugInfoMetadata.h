@@ -2111,7 +2111,6 @@ class DILexicalBlock : public DILexicalBlockBase {
   static DILexicalBlock *getImpl(LLVMContext &Context, Metadata *Scope,
                                  Metadata *File, unsigned Line, unsigned Column,
                                  StorageType Storage, bool ShouldCreate = true);
-
   TempDILexicalBlock cloneImpl() const {
     return getTemporary(getContext(), getScope(), getFile(), getLine(),
                         getColumn());
