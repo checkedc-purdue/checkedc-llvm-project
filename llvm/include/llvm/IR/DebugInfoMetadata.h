@@ -33,6 +33,7 @@
 #include <iterator>
 #include <type_traits>
 #include <vector>
+#include <map>
 
 // Helper macros for defining get() overrides.
 #define DEFINE_MDNODE_GET_UNPACK_IMPL(...) __VA_ARGS__
@@ -204,6 +205,49 @@ public:
     case DIGenericSubrangeKind:
       return true;
     }
+  }
+};
+class BingeMDNode : public MDTuple {
+private:
+  // Additional data members go here.
+  std::map<std::string, std::map<Value*, std::string>> BingeIRSrcInfo;
+  std::string FunctionName;
+  std::string FileName;
+
+public:
+  // Delete the new operator to ensure instances can only be allocated using the LLVM context.
+  void* operator new(size_t) = delete;
+
+  // Add getters for the additional data members here.
+  const std::map<std::string, std::map<Value*, std::string>>& getBingeIRSrcInfo() const {
+    return BingeIRSrcInfo;
+  }
+
+  const std::string& getFunctionName() const {
+    return FunctionName;
+  }
+
+  const std::string& getFileName() const {
+    return FileName;
+  }
+
+  // Provide a static creation method that uses the LLVMContext to allocate an instance.
+  static BingeMDNode *get(LLVMContext &Context,
+                          ArrayRef<Metadata *> MDs,
+                          std::map<std::string, std::map<Value*, std::string>> BingeIRSrcInfo,
+                          std::string FunctionName,
+                          std::string FileName) {
+
+    // Create the MDTuple as usual.
+    MDTuple *Tuple = MDTuple::get(Context, MDs);
+
+    // Then cast it to our subclass and set the additional data members.
+    BingeMDNode *Node = static_cast<BingeMDNode*>(Tuple);
+    Node->BingeIRSrcInfo = std::move(BingeIRSrcInfo);
+    Node->FunctionName = std::move(FunctionName);
+    Node->FileName = std::move(FileName);
+
+    return Node;
   }
 };
 

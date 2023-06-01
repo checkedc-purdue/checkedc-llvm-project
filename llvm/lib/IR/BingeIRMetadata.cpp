@@ -70,3 +70,7 @@ void BingeIRMetadata::AddBingeIRSrcInfo(const std::string &IRTypeStr, Function *
   BingeIRSrcInfo[key][V] = IRTypeStr;
 }
 
+const std::map<std::string, std::map<Value*, std::string>>&
+BingeIRMetadata::getBingeIRSrcInfo() {
+  return BingeIRSrcInfo;
+}

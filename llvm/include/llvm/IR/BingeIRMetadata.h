@@ -22,6 +22,8 @@ public:
   static MDNode* GenBingeMd(Function *F, std::string fileName);
   static void AddBingeIRSrcInfo(const std::string &IRTypeStr, Function *CurFn,
                                 const std::string fileName, Value *V);
+  static const std::map<std::string, std::map<Value*, std::string>>&
+  getBingeIRSrcInfo()  ;
 };
 
 } // end namespace llvm
