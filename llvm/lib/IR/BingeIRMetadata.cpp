@@ -74,3 +74,15 @@ const std::map<std::string, std::map<Value*, std::string>>&
 BingeIRMetadata::getBingeIRSrcInfo() {
   return BingeIRSrcInfo;
 }
+
+const std::vector<llvm::Value *> BingeIRMetadata::genBingeInterestingInstructions() {
+    std::vector<llvm::Value *> BingeInterestingInstructions;
+    for (const auto &srcInfo : BingeIRMetadata::BingeIRSrcInfo) {
+        // srcInfo is a pair whose second element is the inner map
+        for (const auto &valuePair : srcInfo.second) {
+            // valuePair is a pair whose first element is the Value* key
+            BingeInterestingInstructions.push_back(valuePair.first);
+        }
+    }
+    return BingeInterestingInstructions;
+}

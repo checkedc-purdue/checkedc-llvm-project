@@ -207,13 +207,8 @@ public:
     }
   }
 };
-class BingeMDNode : public MDTuple {
-private:
-  // Additional data members go here.
-  std::map<std::string, std::map<Value*, std::string>> BingeIRSrcInfo;
-  std::string FunctionName;
-  std::string FileName;
 
+class BingeMDNode : public MDTuple {
 public:
   // Delete the new operator to ensure instances can only be allocated using the LLVM context.
   void* operator new(size_t) = delete;
@@ -231,22 +226,37 @@ public:
     return FileName;
   }
 
+  const std::vector<Value*> getBingeInterestingInstructions() const {
+      return BingeInterestingInstructions;
+  }
+
   // Provide a static creation method that uses the LLVMContext to allocate an instance.
   static BingeMDNode *get(LLVMContext &Context,
-                          ArrayRef<Metadata *> MDs,
-                          std::map<std::string, std::map<Value*, std::string>> BingeIRSrcInfo,
-                          std::string FunctionName,
-                          std::string FileName) {
+                          std::map<std::string, std::map<Value*, std::string>> BingeIRSrcInfoArg,
+                          std::vector<Value*> BingeInterestingInstructionsArg,
+                          std::string FunctionNameArg,
+                          std::string FileNameArg,
+                          std::map<Metadata*, Value*> &metadataValueMap) {
+
+    std::vector<Metadata*> MDs;
+
+    // Create an MDString for the name of the instruction
+    MDString *FunctionName = MDString::get(Context, FunctionNameArg);
+    // Add it to the metadata list
+    MDs.push_back(FunctionName);
+    MDString *FileName = MDString::get(Context, FileNameArg);
+    // Add it to the metadata list
+    MDs.push_back(FileName);
 
     // Create the MDTuple as usual.
     MDTuple *Tuple = MDTuple::get(Context, MDs);
 
     // Then cast it to our subclass and set the additional data members.
     BingeMDNode *Node = static_cast<BingeMDNode*>(Tuple);
-    Node->BingeIRSrcInfo = std::move(BingeIRSrcInfo);
-    Node->FunctionName = std::move(FunctionName);
-    Node->FileName = std::move(FileName);
-
+    Node->BingeIRSrcInfo = BingeIRSrcInfoArg;
+    Node->BingeInterestingInstructions = BingeInterestingInstructionsArg;
+    Node->FunctionName = FunctionNameArg;
+    Node->FileName = FileNameArg;
     return Node;
   }
 };

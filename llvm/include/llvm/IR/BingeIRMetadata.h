@@ -24,6 +24,7 @@ public:
                                 const std::string fileName, Value *V);
   static const std::map<std::string, std::map<Value*, std::string>>&
   getBingeIRSrcInfo()  ;
+  static const std::vector<llvm::Value*> genBingeInterestingInstructions();
 };
 
 } // end namespace llvm

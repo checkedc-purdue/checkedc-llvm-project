@@ -619,10 +619,10 @@ OPTION(prefix_1, &"-fbackslash"[1], fbackslash, Flag, gfortran_Group, INVALID, n
 OPTION(prefix_1, &"-fbacktrace"[1], fbacktrace, Flag, gfortran_Group, INVALID, nullptr, 0, 0, nullptr, nullptr, nullptr)
 OPTION(prefix_1, &"-fbasic-block-sections="[1], fbasic_block_sections_EQ, Joined, f_Group, INVALID, nullptr, CC1Option | CC1AsOption, 0,
        "Place each function's basic blocks in unique sections (ELF Only) : all | labels | none | list=<file>", nullptr, "all,labels,none,list=")
-OPTION(prefix_1, &"-fbinbench-collector"[1], fbinbench_collector, Flag, INVALID, INVALID, nullptr, 0, 0,
-       "Enable BinBenchCollector", nullptr, nullptr)
+OPTION(prefix_1, &"-fbinbench_collector"[1], fbinbench_collector, Flag, f_Group, INVALID, nullptr, CC1Option | CC1Option, 0,
+"Enable BinBenchCollector", nullptr, nullptr)
 OPTION(prefix_1, &"-fbinutils-version="[1], fbinutils_version_EQ, Joined, f_Group, INVALID, nullptr, CC1Option, 0,
-       "Produced object files can use all ELF features supported by this binutils version and newer. If -fno-integrated-as is specified, the generated assembly will consider GNU as support. 'none' means that all ELF features can be used, regardless of binutils support. Defaults to 2.26.", "<major.minor>", nullptr)
+"Produced object files can use all ELF features supported by this binutils version and newer. If -fno-integrated-as is specified, the generated assembly will consider GNU as support. 'none' means that all ELF features can be used, regardless of binutils support. Defaults to 2.26.", "<major.minor>", nullptr)
 OPTION(prefix_1, &"-fblas-matmul-limit="[1], fblas_matmul_limit_EQ, Joined, gfortran_Group, INVALID, nullptr, 0, 0, nullptr, nullptr, nullptr)
 OPTION(prefix_1, &"-fblocks-runtime-optional"[1], fblocks_runtime_optional, Flag, INVALID, INVALID, nullptr, CC1Option | NoDriverOption, 0,
        "Weakly link in the blocks runtime", nullptr, nullptr)
@@ -1293,8 +1293,6 @@ OPTION(prefix_1, &"-fno-autolink"[1], fno_autolink, Flag, f_Group, INVALID, null
 OPTION(prefix_1, &"-fno-automatic"[1], fno_automatic, Flag, gfortran_Group, INVALID, nullptr, 0, 0, nullptr, nullptr, nullptr)
 OPTION(prefix_1, &"-fno-backslash"[1], fno_backslash, Flag, gfortran_Group, INVALID, nullptr, 0, 0, nullptr, nullptr, nullptr)
 OPTION(prefix_1, &"-fno-backtrace"[1], fno_backtrace, Flag, gfortran_Group, INVALID, nullptr, 0, 0, nullptr, nullptr, nullptr)
-OPTION(prefix_1, &"-fno-binbench-collector"[1], fno_binbench_collector, Flag, INVALID, INVALID, nullptr, 0, 0,
-       "Disable BinBenchCollector", nullptr, nullptr)
 OPTION(prefix_1, &"-fno-bitfield-type-align"[1], fno_bitfield_type_align, Flag, INVALID, INVALID, nullptr, CC1Option | NoDriverOption, 0,
        "Ignore bit-field types when aligning structures", nullptr, nullptr)
 OPTION(prefix_1, &"-fno-blocks"[1], fno_blocks, Flag, f_Group, INVALID, nullptr, CoreOption, 0,

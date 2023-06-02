@@ -411,11 +411,6 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
   // Reset the debug location to that of the simple 'return' expression, if any
   // rather than that of the end of the function's scope '}'.
   ApplyDebugLocation AL(*this, Loc);
-  auto &SM = CurFuncDecl->getASTContext().getSourceManager();
-  std::string const fileName = SM.getFilename(CurFuncDecl->getBeginLoc()).str();
-
-  //llvm::MDNode *Node = llvm::BingeIRMetadata::GenBingeMd(CurFn, fileName);
-  // Insert required code here
   EmitFunctionEpilog(*CurFnInfo, EmitRetDbgLoc, EndLoc);
   EmitEndEHSpec(CurCodeDecl);
 
@@ -428,25 +423,20 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
     EmitBlock(IndirectBranch->getParent());
     Builder.ClearInsertionPoint();
   }
+    auto &SM = CurFuncDecl->getASTContext().getSourceManager();
+    std::string const fileName = SM.getFilename(CurFuncDecl->getBeginLoc()).str();
+    std::map<llvm::Metadata*, llvm::Value*> metadataValueMap;
 
-  SmallVector<llvm::Metadata*, 4> MDs;  // Fill this with the metadata nodes you want.
-  std::map<std::string, std::map<llvm::Value*, std::string>> BingeIRSrcInfo;  // Fill this with the information you want.
-  BingeIRSrcInfo = llvm::BingeIRMetadata::getBingeIRSrcInfo();
-  std::string FunctionName = CurFn->getName().str();  // Set this to the function name.
-
-  llvm::BingeMDNode *Node = llvm::BingeMDNode::get(CGM.getLLVMContext(), MDs, BingeIRSrcInfo, FunctionName, "FileName");
-
+    llvm::BingeMDNode *Node = llvm::BingeMDNode::get(CGM.getLLVMContext(),
+                                                     llvm::BingeIRMetadata::getBingeIRSrcInfo(),
+                                                     llvm::BingeIRMetadata::genBingeInterestingInstructions(),
+                                                     CurFn->getName().str(), fileName, metadataValueMap);
   // Get metadata kind ID.
-  unsigned BingeMDKindID = CurFn->getContext().getMDKindID("BingeIRMetadata");
+  unsigned const BingeMDKindID = CurFn->getContext().getMDKindID("BingeIRMetadata");
 
-  if (EmitBingeMetadata)
-  {
-    // Set metadata for the function.
-    CurFn->setMetadata(BingeMDKindID, Node);
-  }
+  // Set metadata for the function.
+  CurFn->setMetadata(BingeMDKindID, Node);
 
-  // Or, to set metadata for an instruction:
-  // Inst->setMetadata(BingeMDKindID, Node);
 
   // If some of our locals escaped, insert a call to llvm.localescape in the
   // entry block.
@@ -611,7 +601,7 @@ CodeGenFunction::DecodeAddrUsedInPrologue(llvm::Value *F,
   auto *GOTAsInt = Builder.CreateAdd(PCRelAsInt, FuncAsInt, "global_addr.int");
   auto *GOTAddr = Builder.CreateIntToPtr(GOTAsInt, Int8PtrPtrTy, "global_addr");
 
-  // Load the original pointer through the global.
+  // Load the original pointer through the g  lobal.
   return Builder.CreateLoad(Address(GOTAddr, getPointerAlign()),
                             "decoded_addr");
 }

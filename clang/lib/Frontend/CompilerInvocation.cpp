@@ -410,6 +410,7 @@ static void FixupInvocation(CompilerInvocation &Invocation,
   TargetOptions &TargetOpts = Invocation.getTargetOpts();
   FrontendOptions &FrontendOpts = Invocation.getFrontendOpts();
   CodeGenOpts.XRayInstrumentFunctions = LangOpts.XRayInstrument;
+  CodeGenOpts.BinBenchCollector = LangOpts.BinBenchCollector;
   CodeGenOpts.XRayAlwaysEmitCustomEvents = LangOpts.XRayAlwaysEmitCustomEvents;
   CodeGenOpts.XRayAlwaysEmitTypedEvents = LangOpts.XRayAlwaysEmitTypedEvents;
   CodeGenOpts.DisableFree = FrontendOpts.DisableFree;
@@ -1186,10 +1187,6 @@ bool CompilerInvocation::ParseCodeGenArgs(CodeGenOptions &Opts, ArgList &Args,
 
   if (Args.getLastArg(OPT_fbinbench_collector))
     Opts.BinBenchCollector = true;
-
-  if (Args.getLastArg(OPT_fno_binbench_collector)) {
-    Opts.BinBenchCollector = false;
-  }
 
   if (Arg *A = Args.getLastArg(OPT_fdenormal_fp_math_EQ)) {
     StringRef Val = A->getValue();
