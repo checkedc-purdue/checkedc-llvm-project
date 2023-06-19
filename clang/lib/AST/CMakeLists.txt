@@ -27,6 +27,7 @@ add_clang_library(clangAST
   ASTTypeTraits.cpp
   AttrImpl.cpp
   BingeFrontEndCollector.cpp
+  BingeCollectCXXInfo.cpp
   CanonBounds.cpp
   CXXInheritance.cpp
   Comment.cpp

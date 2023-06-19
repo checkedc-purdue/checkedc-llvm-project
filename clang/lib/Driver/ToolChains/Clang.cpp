@@ -4667,6 +4667,11 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     }
   }
 
+  if (Args.hasFlag(options::OPT_fbinbench_collector, false)) {
+    CmdArgs.push_back("-fbinbench_collector");
+  }
+
+
   if (Triple.isOSAIX() && Args.hasArg(options::OPT_maltivec)) {
     if (Args.getLastArg(options::OPT_mabi_EQ_vec_extabi)) {
       CmdArgs.push_back("-mabi=vec-extabi");

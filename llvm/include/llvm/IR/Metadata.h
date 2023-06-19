@@ -38,6 +38,7 @@
 #include <iterator>
 #include <memory>
 #include <string>
+#include <set>
 #include <type_traits>
 #include <utility>
 #include <map>
@@ -1138,6 +1139,8 @@ std::map<std::string, std::map<Value*, std::string>> BingeIRSrcInfo;
 std::vector<Value*> BingeInterestingInstructions;
 std::string FunctionName;
 std::string FileName;
+std::map<std::string, std::set<std::string>>MangledClassNameToVirtualTableSizeInfoIR;
+
 
     /// Get the hash, if any.
   unsigned getHash() const { return SubclassData32; }

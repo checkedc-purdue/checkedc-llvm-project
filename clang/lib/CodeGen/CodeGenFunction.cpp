@@ -23,6 +23,7 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/ASTLambda.h"
 #include "clang/AST/Attr.h"
+#include "clang/AST/BingeCollectCXXInfo.h"
 #include "clang/AST/Decl.h"
 #include "clang/AST/DeclCXX.h"
 #include "clang/AST/Expr.h"
@@ -375,7 +376,7 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
   bool HasOnlyLifetimeMarkers =
       HasCleanups && EHStack.containsOnlyLifetimeMarkers(PrologueCleanupDepth);
   bool EmitRetDbgLoc = !HasCleanups || HasOnlyLifetimeMarkers;
-  bool EmitBingeMetadata = CGM.getCodeGenOpts().BinBenchCollector;
+  bool EmitBingeMetadata = CGM.getCodeGenOpts().binbench_collector;
 
   if (HasCleanups) {
     // Make sure the line table doesn't jump back into the body for
@@ -429,6 +430,7 @@ void CodeGenFunction::FinishFunction(SourceLocation EndLoc) {
 
     llvm::BingeMDNode *Node = llvm::BingeMDNode::get(CGM.getLLVMContext(),
                                                      llvm::BingeIRMetadata::getBingeIRSrcInfo(),
+                                                     clang::ClassVTSizeCollector::MangledClassNameToVirtualTableSizeInfo,
                                                      llvm::BingeIRMetadata::genBingeInterestingInstructions(),
                                                      CurFn->getName().str(), fileName, metadataValueMap);
   // Get metadata kind ID.

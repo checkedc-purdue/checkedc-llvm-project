@@ -48,6 +48,7 @@
 
 #ifdef CLANG_HAVE_RLIMITS
 #include <clang/AST/ConditionStmtTypeCollector.h>
+#include <clang/AST/BingeCollectCXXInfo.h>
 #include <sys/resource.h>
 #endif
 
@@ -236,12 +237,16 @@ int cc1_main(ArrayRef<const char *> Argv, const char *Argv0, void *MainAddr) {
     return 1;
 
   // Execute the frontend actions.
+  if (Clang->getCodeGenOpts().binbench_collector)
   {
     llvm::TimeTraceScope TimeScope("ExecuteCompiler");
-    auto myAction = std::make_unique<ConditionStmtTypeFEAction>();
-    Success = Clang->ExecuteAction(*myAction);
-    Success = ExecuteCompilerInvocation(Clang.get());
+    auto ConditionStmtTypeFE_Action = std::make_unique<ConditionStmtTypeFEAction>();
+    Success |= Clang->ExecuteAction(*ConditionStmtTypeFE_Action);
+    auto ClassVTSizeFE_Action = std::make_unique<ClassVTSizeFEAction>();
+    Success |= Clang->ExecuteAction(*ClassVTSizeFE_Action);
+    Success |= ExecuteCompilerInvocation(Clang.get());
   }
+
 
   // If any timers were active but haven't been destroyed yet, print their
   // results now.  This happens in -disable-free mode.

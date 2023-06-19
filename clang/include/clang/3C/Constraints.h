@@ -90,6 +90,55 @@ public:
   }
 };
 
+class VoidPtrAtom : public Atom {
+    friend class Constraints;
+
+public:
+    VoidPtrAtom() : Atom(A_Ptr) {}
+
+    static bool classof(const Atom *A) {
+        // Something is a class of VoidPtrAtom if it ISN'T a Var.
+        return A->getKind() == A_Ptr;
+    }
+
+    void print(llvm::raw_ostream &O) const override {
+        O << "void*";
+    }
+
+    void dump(void) const override { print(llvm::errs()); }
+
+    void dumpJson(llvm::raw_ostream &O) const override {
+        O << "\"void*\"";
+    }
+
+    bool operator==(const Atom &Other) const override {
+        return llvm::isa<VoidPtrAtom>(&Other);
+    }
+
+    bool operator!=(const Atom &Other) const override {
+        return !(*this == Other);
+    }
+
+    bool operator<(const Atom &Other) const override {
+        return llvm::isa<VoidPtrAtom>(&Other);
+    }
+
+    uint32_t getLoc() const { return Loc; }
+    std::string getName() const { return Name; }
+
+    // Returns the constraints associated with this atom.
+    std::set<Constraint *, PComp<Constraint *>> &getAllConstraints() {
+      return Constraints;
+    }
+
+private:
+    uint32_t Loc;
+    std::string Name;
+    // The constraint expressions where this variable is mentioned on the
+    // LHS of an equality.
+    std::set<Constraint *, PComp<Constraint *>> Constraints;
+};
+
 // This refers to a location that we are trying to solve for.
 class VarAtom : public Atom {
   friend class Constraints;
@@ -285,7 +334,7 @@ struct ReasonLoc {
 //  - a >= b
 class Constraint {
 public:
-  enum ConstraintKind { C_Geq };
+  enum ConstraintKind { C_VoidPtrGeq, C_Geq };
 
 private:
   const ConstraintKind Kind;
@@ -324,6 +373,92 @@ public:
   }
 
   const PersistentSourceLoc &getLocation() const { return Reason.Location; }
+};
+
+class VoidPtrGeq : public Constraint {
+    friend class VarAtom;
+
+public:
+    VoidPtrGeq(Atom *Lhs, Atom *Rhs, const ReasonLoc &Rsn, bool IsVoidPtr = true,
+        bool Soft = false)
+            : Constraint(C_VoidPtrGeq, Rsn), Lhs(Lhs), Rhs(Rhs), IsVoidPtrConstraint(IsVoidPtr),
+              IsSoft(Soft) {}
+
+    static bool classof(const Constraint *C) { return C->getKind() == C_Geq; }
+
+    void print(llvm::raw_ostream &O) const override {
+      Lhs->print(O);
+      std::string Kind = IsVoidPtrConstraint ? " (V)>= " : " (NV)>= ";
+      O << Kind;
+      Rhs->print(O);
+      O << ", Reason: " << getReasonText();
+    }
+
+    void dump(void) const override { print(llvm::errs()); }
+
+    void dumpJson(llvm::raw_ostream &O) const override {
+      O << "{\"Geq\":{\"Atom1\":";
+      Lhs->dumpJson(O);
+      O << ", \"Atom2\":";
+      Rhs->dumpJson(O);
+      O << ", \"isChecked\":";
+      O << (IsVoidPtrConstraint ? "true" : "false");
+      O << ", \"Reason\":";
+      llvm::json::Value ReasonVal(getReasonText());
+      O << ReasonVal;
+      O << "}}";
+    }
+
+    Atom *getLHS(void) const { return Lhs; }
+    Atom *getRHS(void) const { return Rhs; }
+
+    // NEED WORK HERE
+    void setTypeConstraintToVoidPtr(ConstAtom *C) {
+      //Here ConstAtom* C is a the new Atom, whose constraints are being added to
+      //the existing constraint
+      //Some mechanism to sum the constraints of the two atoms
+      //For now, just replace the existing constraint with the new one
+        Lhs = C;
+    }
+
+    bool constraintIsVoidPtrTypeResolved(void) const { return !IsVoidPtrConstraint; }
+
+    bool operator==(const Constraint &Other) const override {
+      if (const VoidPtrGeq *E = llvm::dyn_cast<VoidPtrGeq>(&Other))
+        return *Lhs == *E->Lhs && *Rhs == *E->Rhs &&
+                IsVoidPtrConstraint == E->IsVoidPtrConstraint;
+      return false;
+    }
+
+    bool operator!=(const Constraint &Other) const override {
+      return !(*this == Other);
+    }
+
+    bool operator<(const Constraint &Other) const override {
+      ConstraintKind K = Other.getKind();
+      if (K == C_VoidPtrGeq) {
+        const VoidPtrGeq *E = llvm::dyn_cast<VoidPtrGeq>(&Other);
+        assert(E != nullptr);
+        if (*Lhs == *E->Lhs) {
+          if (*Rhs == *E->Rhs) {
+            if (IsVoidPtrConstraint == E->IsVoidPtrConstraint)
+              return false;
+            return IsVoidPtrConstraint < E->IsVoidPtrConstraint;
+          }
+          return *Rhs < *E->Rhs;
+        }
+        return *Lhs < *E->Lhs;
+      }
+      return C_VoidPtrGeq < K;
+    }
+
+    bool isSoft(void) { return IsSoft; }
+
+private:
+    Atom *Lhs;
+    Atom *Rhs;
+    bool IsVoidPtrConstraint;
+    bool IsSoft;
 };
 
 // a >= b

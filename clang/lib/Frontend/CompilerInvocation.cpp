@@ -410,7 +410,7 @@ static void FixupInvocation(CompilerInvocation &Invocation,
   TargetOptions &TargetOpts = Invocation.getTargetOpts();
   FrontendOptions &FrontendOpts = Invocation.getFrontendOpts();
   CodeGenOpts.XRayInstrumentFunctions = LangOpts.XRayInstrument;
-  CodeGenOpts.BinBenchCollector = LangOpts.BinBenchCollector;
+  CodeGenOpts.binbench_collector = LangOpts.fbinbench_collector;
   CodeGenOpts.XRayAlwaysEmitCustomEvents = LangOpts.XRayAlwaysEmitCustomEvents;
   CodeGenOpts.XRayAlwaysEmitTypedEvents = LangOpts.XRayAlwaysEmitTypedEvents;
   CodeGenOpts.DisableFree = FrontendOpts.DisableFree;
@@ -1185,8 +1185,8 @@ bool CompilerInvocation::ParseCodeGenArgs(CodeGenOptions &Opts, ArgList &Args,
     Opts.ExplicitEmulatedTLS = true;
   }
 
-  if (Args.getLastArg(OPT_fbinbench_collector))
-    Opts.BinBenchCollector = true;
+  if (Args.hasArg(OPT_fbinbench_collector))
+    Opts.binbench_collector = true;
 
   if (Arg *A = Args.getLastArg(OPT_fdenormal_fp_math_EQ)) {
     StringRef Val = A->getValue();
