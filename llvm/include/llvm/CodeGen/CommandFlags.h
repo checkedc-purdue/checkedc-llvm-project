@@ -121,6 +121,8 @@ llvm::DebuggerKind getDebuggerTuningOpt();
 
 bool getEnableStackSizeSection();
 
+bool getbinbench_collector();
+
 bool getEnableAddrsig();
 
 bool getEmitCallSiteInfo();

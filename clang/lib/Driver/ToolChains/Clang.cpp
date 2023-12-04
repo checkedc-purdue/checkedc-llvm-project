@@ -4328,6 +4328,11 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     if (JA.getType() == types::TY_LLVM_BC)
       CmdArgs.push_back("-emit-llvm-uselists");
 
+    if (Args.hasFlag(options::OPT_fbinbench_collector, options::OPT_fno_binbench_collector,
+                     false)) {
+      CmdArgs.push_back("-fbinbench_collector");
+    }
+
     // Device-side jobs do not support LTO.
     bool isDeviceOffloadAction = !(JA.isDeviceOffloading(Action::OFK_None) ||
                                    JA.isDeviceOffloading(Action::OFK_Host));
@@ -4666,11 +4671,6 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
       }
     }
   }
-
-  if (Args.hasFlag(options::OPT_fbinbench_collector, false)) {
-    CmdArgs.push_back("-fbinbench_collector");
-  }
-
 
   if (Triple.isOSAIX() && Args.hasArg(options::OPT_maltivec)) {
     if (Args.getLastArg(options::OPT_mabi_EQ_vec_extabi)) {

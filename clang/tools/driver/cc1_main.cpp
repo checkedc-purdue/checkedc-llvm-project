@@ -50,6 +50,8 @@
 #include <clang/AST/ConditionStmtTypeCollector.h>
 #include <clang/AST/BingeCollectCXXInfo.h>
 #include <sys/resource.h>
+#include <clang/AST/LoopTypeCollector.h>
+
 #endif
 
 using namespace clang;
@@ -242,11 +244,12 @@ int cc1_main(ArrayRef<const char *> Argv, const char *Argv0, void *MainAddr) {
     llvm::TimeTraceScope TimeScope("ExecuteCompiler");
     auto ConditionStmtTypeFE_Action = std::make_unique<ConditionStmtTypeFEAction>();
     Success |= Clang->ExecuteAction(*ConditionStmtTypeFE_Action);
+    auto LoopTypeFE_Action = std::make_unique<LoopTypeFEAction>();
+    Success |= Clang->ExecuteAction(*LoopTypeFE_Action);
     auto ClassVTSizeFE_Action = std::make_unique<ClassVTSizeFEAction>();
     Success |= Clang->ExecuteAction(*ClassVTSizeFE_Action);
-    Success |= ExecuteCompilerInvocation(Clang.get());
   }
-
+  Success |= ExecuteCompilerInvocation(Clang.get());
 
   // If any timers were active but haven't been destroyed yet, print their
   // results now.  This happens in -disable-free mode.

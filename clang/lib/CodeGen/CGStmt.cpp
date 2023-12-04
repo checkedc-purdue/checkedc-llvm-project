@@ -657,8 +657,15 @@ void CodeGenFunction::EmitGotoStmt(const GotoStmt &S) {
     BingeFrontEndCollector::addValueStmtInfo(RetVal, &S);
     auto &SM = CurFuncDecl->getASTContext().getSourceManager();
     std::string const fileName = SM.getFilename(CurFuncDecl->getBeginLoc()).str();
+    llvm::LLVMContext &Ctx = Builder.getContext();
+    clang::PresumedLoc PLoc = SM.getPresumedLoc(S.getBeginLoc());
+    llvm::MDNode *DebugInfo = llvm::MDNode::get(Ctx, {
+            llvm::MDString::get(Ctx, fileName),
+            llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), PLoc.getLine())),
+            llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), PLoc.getColumn()))
+    }      );
 
-    llvm::BingeIRMetadata::AddBingeIRSrcInfo("Goto", CurFn, fileName, RetVal);
+    llvm::BingeIRMetadata::AddBingeIRSrcInfo("Goto", CurFn, fileName, RetVal, *DebugInfo);
   }
 }
 
@@ -825,6 +832,21 @@ void CodeGenFunction::EmitWhileStmt(const WhileStmt &S,
         S.getCond(), getProfileCount(S.getBody()), S.getBody());
     Builder.CreateCondBr(BoolCondVal, LoopBody, ExitBlock, Weights);
 
+    if (BoolCondVal && BingeFrontEndCollector::isStmtCollectedAsBingeSrcInfo(&S)) {
+      BingeFrontEndCollector::addValueStmtInfo(BoolCondVal, &S);
+      auto &SM = CurFuncDecl->getASTContext().getSourceManager();
+      std::string const fileName = SM.getFilename(CurFuncDecl->getBeginLoc()).str();
+      llvm::LLVMContext &Ctx = Builder.getContext();
+      clang::PresumedLoc PLoc = SM.getPresumedLoc(S.getBeginLoc());
+      llvm::MDNode *DebugInfo = llvm::MDNode::get(Ctx, {
+              llvm::MDString::get(Ctx, fileName),
+              llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), PLoc.getLine())),
+              llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), PLoc.getColumn()))
+      }      );
+
+      llvm::BingeIRMetadata::AddBingeIRSrcInfo("While", CurFn, fileName, BoolCondVal, *DebugInfo);
+    }
+
     if (ExitBlock != LoopExit.getBlock()) {
       EmitBlock(ExitBlock);
       EmitBranchThroughCleanup(LoopExit);
@@ -922,6 +944,21 @@ void CodeGenFunction::EmitDoStmt(const DoStmt &S,
     Builder.CreateCondBr(
         BoolCondVal, LoopBody, LoopExit.getBlock(),
         createProfileWeightsForLoop(S.getCond(), BackedgeCount));
+    if (BoolCondVal && BingeFrontEndCollector::isStmtCollectedAsBingeSrcInfo(&S)) {
+      BingeFrontEndCollector::addValueStmtInfo(BoolCondVal, &S);
+      auto &SM = CurFuncDecl->getASTContext().getSourceManager();
+      std::string const fileName = SM.getFilename(CurFuncDecl->getBeginLoc()).str();
+      llvm::LLVMContext &Ctx = Builder.getContext();
+      clang::PresumedLoc PLoc = SM.getPresumedLoc(S.getBeginLoc());
+      llvm::MDNode *DebugInfo = llvm::MDNode::get(Ctx, {
+              llvm::MDString::get(Ctx, fileName),
+              llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), PLoc.getLine())),
+              llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), PLoc.getColumn()))
+      }      );
+
+      llvm::BingeIRMetadata::AddBingeIRSrcInfo("DoWhile", CurFn, fileName,
+                                               BoolCondVal, *DebugInfo);
+    }
   }
 
   LoopStack.pop();
@@ -1006,7 +1043,22 @@ void CodeGenFunction::EmitForStmt(const ForStmt &S,
       if (C->isOne())
         FnIsMustProgress = false;
 
-    Builder.CreateCondBr(BoolCondVal, ForBody, ExitBlock, Weights);
+    llvm::Value *CondVal = Builder.CreateCondBr(BoolCondVal, ForBody, ExitBlock, Weights);
+
+    if (BoolCondVal && BingeFrontEndCollector::isStmtCollectedAsBingeSrcInfo(&S)) {
+      BingeFrontEndCollector::addValueStmtInfo(BoolCondVal, &S);
+      auto &SM = CurFuncDecl->getASTContext().getSourceManager();
+      std::string const fileName = SM.getFilename(CurFuncDecl->getBeginLoc()).str();
+      clang::PresumedLoc PLoc = SM.getPresumedLoc(S.getBeginLoc());
+      llvm::LLVMContext &Ctx = Builder.getContext();
+      llvm::MDNode *DebugInfo = llvm::MDNode::get(Ctx, {
+              llvm::MDString::get(Ctx, fileName),
+              llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), PLoc.getLine())),
+              llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), PLoc.getColumn()))
+      }      );
+
+      llvm::BingeIRMetadata::AddBingeIRSrcInfo("For", CurFn, fileName, BoolCondVal, *DebugInfo);
+    }
 
     if (ExitBlock != LoopExit.getBlock()) {
       EmitBlock(ExitBlock);
@@ -1831,12 +1883,19 @@ void CodeGenFunction::EmitSwitchStmt(const SwitchStmt &S) {
   if (S.getConditionVariable())
     EmitDecl(*S.getConditionVariable());
   llvm::Value *CondV = EmitScalarExpr(S.getCond());
-  if (BingeFrontEndCollector::isStmtCollectedAsBingeSrcInfo(S.getCond())) {
+  if (CondV && BingeFrontEndCollector::isStmtCollectedAsBingeSrcInfo(S.getCond())) {
     BingeFrontEndCollector::addValueStmtInfo(CondV, S.getCond());
     auto &SM = CurFuncDecl->getASTContext().getSourceManager();
     std::string const fileName = SM.getFilename(CurFuncDecl->getBeginLoc()).str();
+    llvm::LLVMContext &Ctx = Builder.getContext();
+    clang::PresumedLoc PLoc = SM.getPresumedLoc(S.getBeginLoc());
+    llvm::MDNode *DebugInfo = llvm::MDNode::get(Ctx, {
+            llvm::MDString::get(Ctx, fileName),
+            llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), PLoc.getLine())),
+            llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), PLoc.getColumn()))
+    }      );
 
-    llvm::BingeIRMetadata::AddBingeIRSrcInfo("Switch", CurFn, fileName, CondV);
+    llvm::BingeIRMetadata::AddBingeIRSrcInfo("Switch", CurFn, fileName, CondV, *DebugInfo);
   }
   // Create basic block to hold stuff that comes after switch
   // statement. We also need to create a default block now so that

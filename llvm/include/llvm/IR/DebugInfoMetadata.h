@@ -26,6 +26,7 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Metadata.h"
 #include "llvm/Support/Casting.h"
+#include "BingeIRMetadata.h"
 #include <cassert>
 #include <climits>
 #include <cstddef>
@@ -34,6 +35,7 @@
 #include <type_traits>
 #include <vector>
 #include <map>
+#include <fstream>
 
 // Helper macros for defining get() overrides.
 #define DEFINE_MDNODE_GET_UNPACK_IMPL(...) __VA_ARGS__
@@ -232,7 +234,8 @@ public:
   // Provide a static creation method that uses the LLVMContext to allocate an instance.
   static BingeMDNode *get(LLVMContext &Context,
                           std::map<std::string, std::map<Value*, std::string>> BingeIRSrcInfoArg,
-                          std::map<std::string, std::set<std::string>>MangledClassNameToVirtualTableSizeInfoIR,
+                          std::string jsonFileName,
+                          std::map<std::string, std::set<std::string>> MangledClassNameToVirtualTableSizeInfoIR,
                           std::vector<Value*> BingeInterestingInstructionsArg,
                           std::string FunctionNameArg,
                           std::string FileNameArg,
@@ -240,7 +243,7 @@ public:
 
     std::vector<Metadata*> MDs;
 
-    // Create an MDString for the name of the instruction
+    // Create an MDString for the name of the function
     MDString *FunctionName = MDString::get(Context, FunctionNameArg);
     // Add it to the metadata list
     MDs.push_back(FunctionName);
@@ -253,6 +256,7 @@ public:
 
     // Then cast it to our subclass and set the additional data members.
     BingeMDNode *Node = static_cast<BingeMDNode*>(Tuple);
+    Node->JsonFileName = jsonFileName;
     Node->BingeIRSrcInfo = BingeIRSrcInfoArg;
     Node->MangledClassNameToVirtualTableSizeInfoIR = MangledClassNameToVirtualTableSizeInfoIR;
     Node->BingeInterestingInstructions = BingeInterestingInstructionsArg;
